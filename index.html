@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic Tower Defense</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div class="stats">
+                <div class="stat-item"><i class="fas fa-coins"></i> Gold: <span id="gold">100</span></div>
+                <div class="stat-item"><i class="fas fa-wave-square"></i> Wave: <span id="wave">1</span></div>
+                <div class="stat-item"><i class="fas fa-heart"></i> Lives: <span id="lives">20</span></div>
+                <div class="stat-item"><i class="fas fa-star"></i> Score: <span id="score">0</span></div>
+            </div>
+            
+            <div class="shop">
+                <div class="tower-item tooltip" data-type="archer" data-cost="50">
+                    <div class="tower-icon">🏹</div>
+                    Archer
+                    <span class="tower-cost">50 gold</span>
+                    <span class="tooltiptext">Long range, medium damage. Effective against light enemies.</span>
+                    <div class="health-bar"><div class="health-fill"></div></div>
+                </div>
+                <div class="tower-item tooltip" data-type="cannon" data-cost="100">
+                    <div class="tower-icon">💣</div>
+                    Cannon
+                    <span class="tower-cost">100 gold</span>
+                    <span class="tooltiptext">Area damage, slow firing. Good against groups.</span>
+                    <div class="health-bar"><div class="health-fill"></div></div>
+                </div>
+                <div class="tower-item tooltip" data-type="magic" data-cost="150">
+                    <div class="tower-icon">🔮</div>
+                    Magic
+                    <span class="tower-cost">150 gold</span>
+                    <span class="tooltiptext">Magic damage, ignores armor. Effective against tanks.</span>
+                    <div class="health-bar"><div class="health-fill"></div></div>
+                </div>
+                <div class="tower-item tooltip" data-type="sniper" data-cost="200">
+                    <div class="tower-icon">🎯</div>
+                    Sniper
+                    <span class="tower-cost">200 gold</span>
+                    <span class="tooltiptext">Very long range, high damage. Slow firing rate.</span>
+                    <div class="health-bar"><div class="health-fill"></div></div>
+                </div>
+            </div>
+            
+            <div class="tower-stats">
+                <div class="stat-card">
+                    <h3>TOWERS</h3>
+                    <p id="towerCount">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>ENEMIES</h3>
+                    <p id="enemyCount">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>KILLS</h3>
+                    <p id="killCount">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>DAMAGE</h3>
+                    <p id="damageCount">0</p>
+                </div>
+            </div>
+            
+            <div class="wave-indicator">
+                <i class="fas fa-hourglass-half"></i>
+                Next wave: 
+                <div class="wave-progress">
+                    <div class="wave-progress-inner" id="waveProgress"></div>
+                </div>
+                <span id="waveTimer">0</span>s
+            </div>
+            
+            <div class="upcoming-waves">
+                <h3><i class="fas fa-forward"></i> Next Waves Preview</h3>
+                <div class="wave-preview" id="wavePreview">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="startWave"><i class="fas fa-play"></i> Start Wave</button>
+                <button id="pauseBtn"><i class="fas fa-pause"></i> Pause</button>
+                <button id="muteBtn"><i class="fas fa-volume-up"></i> Sound</button>
+                <button id="fastForward"><i class="fas fa-forward"></i> Speed x1</button>
+                <button id="nukeBtn" class="special-ability cooldown"><i class="fas fa-bomb"></i> Nuke <span class="cooldown-timer" id="nukeCooldownTimer">30</span></button>
+            </div>
+            
+            <div class="instructions">
+                <p><i class="fas fa-info-circle"></i> Game Instructions:</p>
+                <ul>
+                    <li><i class="fas fa-mouse-pointer"></i> Click on a tower type to select it</li>
+                    <li><i class="fas fa-plus-circle"></i> Click on an empty circle to place the tower</li>
+                    <li><i class="fas fa-play-circle"></i> Click "Start Wave" to begin the enemy attack</li>
+                    <li><i class="fas fa-crosshairs"></i> Click on a placed tower to upgrade or sell it</li>
+                    <li><i class="fas fa-keyboard"></i> Press SPACE to start next wave, N for nuke</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tower Info Panel -->
+    <div id="towerInfo">
+        <h3 id="towerName">Tower</h3>
+        <p>Level: <span id="towerLevel">1</span></p>
+        <p>Damage: <span id="towerDamage">10</span></p>
+        <p>Range: <span id="towerRange">100</span></p>
+        <p>Upgrade Cost: <span id="upgradeCost">50</span> gold</p>
+        <button class="upgrade-btn" id="upgradeTower"><i class="fas fa-arrow-up"></i> Upgrade</button>
+        <button class="sell-btn" id="sellTower"><i class="fas fa-coins"></i> Sell</button>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Achievement -->
+    <div class="achievement" id="achievement">
+        <div class="achievement-content">
+            <i class="fas fa-trophy"></i>
+            <div class="achievement-text">
+                <h3 id="achievementTitle">Wave Completed!</h3>
+                <p id="achievementDesc">You've successfully completed the wave</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="menuScreen">
+        <h1><i class="fas fa-fort-awesome"></i> Epic Tower Defense</h1>
+        <p>Defend your kingdom from enemy waves! Build towers, upgrade them, and survive as long as possible.</p>
+        
+        <div class="high-score">
+            <h3><i class="fas fa-trophy"></i> High Score: <span id="highScore">0</span></h3>
+            <h3><i class="fas fa-crown"></i> Longest Survival: <span id="longestWave">0</span> waves</h3>
+        </div>
+        
+        <div class="difficulty-buttons">
+            <button data-difficulty="easy"><i class="fas fa-baby"></i> Easy</button>
+            <button data-difficulty="normal" class="selected-difficulty"><i class="fas fa-user"></i> Normal</button>
+            <button data-difficulty="hard"><i class="fas fa-skull"></i> Hard</button>
+            <button data-difficulty="brutal"><i class="fas fa-dragon"></i> Brutal</button>
+        </div>
+        
+        <button id="startGame"><i class="fas fa-play"></i> Start Game</button>
+    </div>
+
+    <div id="gameOverScreen">
+        <h2><i class="fas fa-skull"></i> Game Over!</h2>
+        <p>Your kingdom has been destroyed...</p>
+        <div class="high-score">
+            <h3><i class="fas fa-star"></i> Final Score: <span id="finalScore">0</span></h3>
+            <h3><i class="fas fa-trophy"></i> High Score: <span id="finalHighScore">0</span></h3>
+            <h3><i class="fas fa-crown"></i> Waves Survived: <span id="finalWaves">0</span></h3>
+        </div>
+        <button id="restartGame"><i class="fas fa-redo"></i> Play Again</button>
+    </div>
+
+    <script src="script.js">    </script>
+</body>
+</html>
